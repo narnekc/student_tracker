@@ -128,12 +128,12 @@ timetracker-backend/
 
 ## 👨‍🎓 PHASE 4: STUDENT PORTAL FEATURES
 
-### **4.1 Dashboard (Image 2, 5, 12)**
+### **4.1 Dashboard **
 **Endpoints:**
 - `GET /api/student/dashboard` - Current status and today's hours
   - Returns: check-in status, today's hours, last check-in/out, weekly stats
 
-### **4.2 Check-In Functionality (Image 2, 5, 12)**
+### **4.2 Check-In Functionality **
 **Endpoints:**
 - `POST /api/attendance/check-in` - Start work session
   - Validate: No active session exists
@@ -142,7 +142,7 @@ timetracker-backend/
   - Log: Audit entry
   - Return: Confirmation + session details
 
-### **4.3 Check-Out Functionality (Image 2)**
+### **4.3 Check-Out Functionality **
 **Endpoints:**
 - `POST /api/attendance/check-out` - End work session
   - Validate: Active session exists
@@ -151,14 +151,14 @@ timetracker-backend/
   - Log: Audit entry
   - Return: Session summary with total hours
 
-### **4.4 Attendance History (Image 3)**
+### **4.4 Attendance History **
 **Endpoints:**
 - `GET /api/student/attendance/history` - Past attendance records
   - Query params: start_date, end_date, status, page, limit
   - Calculate: Total days, total hours, average daily, attendance rate
   - Return: Paginated list with filters
 
-### **4.5 Personal Reports (Image 3)**
+### **4.5 Personal Reports **
 **Endpoints:**
 - `GET /api/student/reports/summary` - Monthly/weekly summary
   - Calculate: Total hours, days present, average daily hours
@@ -168,7 +168,7 @@ timetracker-backend/
 
 ## 👨‍💼 PHASE 5: MANAGER PORTAL FEATURES
 
-### **5.1 Manager Dashboard (Image 1)**
+### **5.1 Manager Dashboard **
 **Endpoints:**
 - `GET /api/manager/dashboard` - Overview statistics
   - Returns:
@@ -180,7 +180,7 @@ timetracker-backend/
     - Recent check-ins (last 10)
     - System alerts
 
-### **5.2 User Management (Image 7, 9, 10)**
+### **5.2 User Management **
 **Endpoints:**
 - `GET /api/users` - List all users with filters
   - Query params: role, status, search, sort, page, limit
@@ -206,14 +206,14 @@ timetracker-backend/
   - Log: Audit entry
   - Return: Success message
 
-### **5.3 Attendance Reports (Image 4, 8)**
+### **5.3 Attendance Reports **
 **Endpoints:**
 - `GET /api/manager/reports/daily` - Daily attendance report
   - Query params: date, min_hours, status, export_format
   - Returns: All students with check-in/out times, total hours, status
   - Support: Excel/PDF export
 
-- `GET /api/manager/reports/student/:id` - Individual student report (Image 13)
+- `GET /api/manager/reports/student/:id` - Individual student report 
   - Query params: from_date, to_date, session_type
   - Calculate: Total hours, days present, average daily, auto-checkouts
   - Return: Detailed attendance history with trends
@@ -222,7 +222,7 @@ timetracker-backend/
   - Returns: Present vs absent counts per day
   - Format: Chart-ready data
 
-### **5.4 Audit Logs (Image 6)**
+### **5.4 Audit Logs **
 **Endpoints:**
 - `GET /api/audit/logs` - System activity logs
   - Query params: date_range, event_type, user, search, page, limit

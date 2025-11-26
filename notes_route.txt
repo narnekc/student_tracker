@@ -1,0 +1,27 @@
+Authentication Endpoints
+POST   /api/auth/register      - Register new user
+POST   /api/auth/login         - Login user
+GET    /api/auth/me            - Get current user
+POST   /api/auth/logout        - Logout user
+
+
+Student Portal Endpoints
+GET    /api/student/dashboard           - Student dashboard
+POST   /api/attendance/check-in         - Check in
+POST   /api/attendance/check-out        - Check out
+GET    /api/student/attendance/history  - Attendance history
+GET    /api/student/reports/summary     - Personal reports
+
+
+Manager Portal Endpoints
+GET    /api/manager/dashboard               - Manager dashboard
+GET    /api/users                           - List users
+POST   /api/users                           - Create user
+GET    /api/users/:id                       - Get user
+PUT    /api/users/:id                       - Update user
+DELETE /api/users/:id                       - Delete user
+GET    /api/manager/reports/daily           - Daily report
+GET    /api/manager/reports/student/:id     - Student report
+GET    /api/audit/logs                      - Audit logs
+GET    /api/settings                        - Get settings
+PUT    /api/settings                        - Update settings

@@ -1,0 +1,12 @@
+### Register a student user with fields: student_id, first_name, last_name, email, password_hash, role (default 'student'), status (default 'active').
+POST http://localhost:8383/auth/register
+Content-Type: application/json
+
+{
+    "student_id": "S123456",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "example@example.com",
+    "password": "securepassword",
+    "user_role": "student"
+}

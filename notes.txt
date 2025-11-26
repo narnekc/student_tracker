@@ -1,0 +1,414 @@
+# 📋 COMPREHENSIVE PROJECT PLAN FOR TIMETRACKER BACKEND
+
+
+## 🎯 PROJECT OVERVIEW
+
+**System Purpose:** Student attendance tracking with check-in/check-out functionality, separate portals for students and managers, real-time reporting, and audit logging.
+
+**Tech Stack:**
+- **Backend:** Node.js + Express.js
+- **Database:** SQLite (sql.js for pure JavaScript implementation)
+- **Authentication:** JWT (JSON Web Tokens)
+- **Security:** bcrypt for password hashing, helmet for HTTP headers
+- **Validation:** express-validator
+
+---
+
+## 📊 PHASE 1: DATABASE DESIGN & ARCHITECTURE
+
+### **1.1 Database Tables (Based on UI Analysis)**
+
+#### **Users Table**
+- Stores both students and managers
+- Fields: id, student_id (unique), first_name, last_name, email, password_hash, role (student/manager), status (active/inactive), department, created_at, updated_at, last_active
+- Purpose: Authentication and user management
+
+#### **Attendance Table**
+- Tracks all check-in/check-out sessions
+- Fields: id, user_id, check_in_time, check_out_time, total_hours, status (active/completed/auto_checkout), session_date, notes, created_at, updated_at
+- Purpose: Core attendance tracking functionality
+- Relationships: Foreign key to users table
+
+#### **Audit Logs Table**
+- Complete system activity tracking
+- Fields: id, user_id, event_type, description, ip_address, user_agent, status, timestamp
+- Purpose: Security monitoring and compliance (seen in Manager UI)
+- Tracks: logins, check-ins, check-outs, user changes, system events
+
+#### **System Settings Table**
+- Application configuration
+- Fields: id, setting_key, setting_value, description, updated_by, updated_at
+- Purpose: Configurable parameters (work hours target, auto-checkout time, etc.)
+
+#### **System Alerts Table**
+- Notification system
+- Fields: id, alert_type, title, message, is_active, created_at, expires_at
+- Purpose: Display system-wide alerts (seen in Manager Dashboard)
+
+---
+
+## 🏗️ PHASE 2: PROJECT STRUCTURE
+
+```
+timetracker-backend/
+├── .env                          # Environment variables (secrets, config)
+├── .gitignore                    # Git ignore file
+├── package.json                  # Dependencies and scripts
+├── server.js                     # Main entry point
+├── database/
+│   └── timetracker.db           # SQLite database file
+├── src/
+│   ├── config/
+│   │   └── database.js          # Database connection and initialization
+│   ├── middleware/
+│   │   ├── auth.middleware.js   # JWT verification
+│   │   ├── validation.middleware.js  # Input validation
+│   │   └── error.middleware.js  # Error handling
+│   ├── controllers/
+│   │   ├── auth.controller.js   # Login, register, logout
+│   │   ├── student.controller.js # Student-specific operations
+│   │   ├── manager.controller.js # Manager-specific operations
+│   │   ├── attendance.controller.js # Check-in/out logic
+│   │   ├── report.controller.js  # Report generation
+│   │   ├── user.controller.js    # User CRUD operations
+│   │   └── audit.controller.js   # Audit log operations
+│   ├── routes/
+│   │   ├── auth.routes.js       # Authentication endpoints
+│   │   ├── student.routes.js    # Student portal endpoints
+│   │   ├── manager.routes.js    # Manager portal endpoints
+│   │   ├── attendance.routes.js # Attendance endpoints
+│   │   ├── report.routes.js     # Report endpoints
+│   │   ├── user.routes.js       # User management endpoints
+│   │   └── audit.routes.js      # Audit log endpoints
+│   ├── models/
+│   │   ├── user.model.js        # User database operations
+│   │   ├── attendance.model.js  # Attendance database operations
+│   │   └── audit.model.js       # Audit log operations
+│   └── utils/
+│       ├── jwt.util.js          # JWT token generation/verification
+│       ├── date.util.js         # Date/time calculations
+│       ├── validation.util.js   # Custom validators
+│       └── cronjob.util.js      # Auto-checkout scheduler
+```
+
+---
+
+## 🔐 PHASE 3: AUTHENTICATION SYSTEM
+
+### **3.1 User Registration Flow**
+1. Accept: student_id, name, email, password, role, department
+2. Validate input (email format, password strength)
+3. Check for duplicates (email, student_id)
+4. Hash password with bcrypt
+5. Insert into database
+6. Create audit log entry
+7. Return success (no auto-login)
+
+### **3.2 Login Flow**
+1. Accept: email, password
+2. Find user by email
+3. Verify password with bcrypt
+4. Check account status (active/inactive)
+5. Generate JWT token (payload: userId, email, role)
+6. Update last_active timestamp
+7. Create audit log entry
+8. Return token + user info
+
+### **3.3 JWT Token Structure**
+- **Payload:** userId, email, role, issued_at
+- **Expiration:** 24 hours (configurable)
+- **Verification:** Middleware checks token on protected routes
+
+### **3.4 Role-Based Access Control (RBAC)**
+- **Student role:** Access to student portal only
+- **Manager role:** Access to both portals + admin features
+- Middleware: `authorize(['student'])` or `authorize(['manager'])`
+
+---
+
+## 👨‍🎓 PHASE 4: STUDENT PORTAL FEATURES
+
+### **4.1 Dashboard (Image 2, 5, 12)**
+**Endpoints:**
+- `GET /api/student/dashboard` - Current status and today's hours
+  - Returns: check-in status, today's hours, last check-in/out, weekly stats
+
+### **4.2 Check-In Functionality (Image 2, 5, 12)**
+**Endpoints:**
+- `POST /api/attendance/check-in` - Start work session
+  - Validate: No active session exists
+  - Create: New attendance record with check_in_time
+  - Update: Session status to 'active'
+  - Log: Audit entry
+  - Return: Confirmation + session details
+
+### **4.3 Check-Out Functionality (Image 2)**
+**Endpoints:**
+- `POST /api/attendance/check-out` - End work session
+  - Validate: Active session exists
+  - Update: check_out_time, calculate total_hours
+  - Update: Status to 'completed'
+  - Log: Audit entry
+  - Return: Session summary with total hours
+
+### **4.4 Attendance History (Image 3)**
+**Endpoints:**
+- `GET /api/student/attendance/history` - Past attendance records
+  - Query params: start_date, end_date, status, page, limit
+  - Calculate: Total days, total hours, average daily, attendance rate
+  - Return: Paginated list with filters
+
+### **4.5 Personal Reports (Image 3)**
+**Endpoints:**
+- `GET /api/student/reports/summary` - Monthly/weekly summary
+  - Calculate: Total hours, days present, average daily hours
+  - Return: Summary statistics with trend data
+
+---
+
+## 👨‍💼 PHASE 5: MANAGER PORTAL FEATURES
+
+### **5.1 Manager Dashboard (Image 1)**
+**Endpoints:**
+- `GET /api/manager/dashboard` - Overview statistics
+  - Returns:
+    - Total students registered
+    - Present today (count + percentage)
+    - Absent today (count + percentage)
+    - Average hours today
+    - Weekly attendance trend (chart data)
+    - Recent check-ins (last 10)
+    - System alerts
+
+### **5.2 User Management (Image 7, 9, 10)**
+**Endpoints:**
+- `GET /api/users` - List all users with filters
+  - Query params: role, status, search, sort, page, limit
+  - Returns: Paginated user list
+
+- `POST /api/users` - Create new user (student/manager)
+  - Validate: All required fields, unique email/student_id
+  - Hash password
+  - Create user record
+  - Return: Created user info
+
+- `GET /api/users/:id` - Get single user details
+  - Returns: Full user profile + recent activity
+
+- `PUT /api/users/:id` - Update user information
+  - Allow: name, email, role, status, department
+  - Validate: No duplicate email/student_id
+  - Log: Audit entry with changes
+  - Return: Updated user info
+
+- `DELETE /api/users/:id` - Deactivate user account
+  - Soft delete: Set status to 'inactive'
+  - Log: Audit entry
+  - Return: Success message
+
+### **5.3 Attendance Reports (Image 4, 8)**
+**Endpoints:**
+- `GET /api/manager/reports/daily` - Daily attendance report
+  - Query params: date, min_hours, status, export_format
+  - Returns: All students with check-in/out times, total hours, status
+  - Support: Excel/PDF export
+
+- `GET /api/manager/reports/student/:id` - Individual student report (Image 13)
+  - Query params: from_date, to_date, session_type
+  - Calculate: Total hours, days present, average daily, auto-checkouts
+  - Return: Detailed attendance history with trends
+
+- `GET /api/manager/reports/weekly-trend` - Week-over-week comparison
+  - Returns: Present vs absent counts per day
+  - Format: Chart-ready data
+
+### **5.4 Audit Logs (Image 6)**
+**Endpoints:**
+- `GET /api/audit/logs` - System activity logs
+  - Query params: date_range, event_type, user, search, page, limit
+  - Returns: Paginated audit entries
+  - Events: Login, check-in, check-out, user updates, system changes
+
+- `GET /api/audit/stats` - Audit statistics
+  - Returns: Total events today, login events, attendance events, user changes
+
+### **5.5 System Settings**
+**Endpoints:**
+- `GET /api/settings` - Get all settings
+- `PUT /api/settings` - Update settings
+  - Settings: default_work_hours, auto_checkout_time, etc.
+
+---
+
+## ⚙️ PHASE 6: BUSINESS LOGIC & UTILITIES
+
+### **6.1 Auto-Checkout System**
+**Purpose:** Automatically check out students who forgot to check out
+
+**Implementation:**
+- Cron job runs at midnight (configurable)
+- Find all attendance records with status='active'
+- Update check_out_time to 11:59 PM same day
+- Calculate total_hours
+- Update status to 'auto_checkout'
+- Create audit log entries
+- Optional: Send notification/alert
+
+### **6.2 Time Calculations**
+**Functions:**
+- `calculateTotalHours(checkIn, checkOut)` - Duration in hours
+- `getWeeklyStats(userId, weekStart)` - Weekly aggregation
+- `getMonthlyStats(userId, month, year)` - Monthly aggregation
+- `calculateAttendanceRate(userId, startDate, endDate)` - Percentage
+
+### **6.3 Data Validation**
+**Rules:**
+- Check-in: Cannot check in if already checked in
+- Check-out: Cannot check out without active session
+- Session duration: Alert if > 12 hours (possible forgot to check out)
+- Date validation: All dates must be valid and not future dates
+
+### **6.4 Report Generation**
+**Export Formats:**
+- JSON (default API response)
+- Excel (for data analysis)
+- PDF (for formal reports)
+
+---
+
+## 🔒 PHASE 7: SECURITY & BEST PRACTICES
+
+### **7.1 Security Measures**
+- **Password:** bcrypt hashing with salt rounds (10-12)
+- **JWT:** Signed tokens with expiration
+- **Input Validation:** express-validator on all inputs
+- **SQL Injection:** Parameterized queries (no string concatenation)
+- **CORS:** Configured for specific frontend origin
+- **Rate Limiting:** Prevent brute force attacks (future enhancement)
+- **Helmet:** Security HTTP headers
+
+### **7.2 Error Handling**
+- Centralized error middleware
+- Consistent error response format
+- Appropriate HTTP status codes
+- No sensitive info in error messages (production)
+
+### **7.3 Logging**
+- Morgan for HTTP request logging
+- Audit logs for security events
+- Console logs for development
+- File logs for production (future enhancement)
+
+---
+
+## 📡 PHASE 8: API ENDPOINT SUMMARY
+
+### **Authentication Endpoints**
+```
+POST   /api/auth/register      - Register new user
+POST   /api/auth/login         - Login user
+GET    /api/auth/me            - Get current user
+POST   /api/auth/logout        - Logout user
+```
+
+### **Student Portal Endpoints**
+```
+GET    /api/student/dashboard           - Student dashboard
+POST   /api/attendance/check-in         - Check in
+POST   /api/attendance/check-out        - Check out
+GET    /api/student/attendance/history  - Attendance history
+GET    /api/student/reports/summary     - Personal reports
+```
+
+### **Manager Portal Endpoints**
+```
+GET    /api/manager/dashboard               - Manager dashboard
+GET    /api/users                           - List users
+POST   /api/users                           - Create user
+GET    /api/users/:id                       - Get user
+PUT    /api/users/:id                       - Update user
+DELETE /api/users/:id                       - Delete user
+GET    /api/manager/reports/daily           - Daily report
+GET    /api/manager/reports/student/:id     - Student report
+GET    /api/audit/logs                      - Audit logs
+GET    /api/settings                        - Get settings
+PUT    /api/settings                        - Update settings
+```
+
+---
+
+## 🧪 PHASE 9: TESTING STRATEGY
+
+### **9.1 Manual Testing**
+- Use Postman/Insomnia for API testing
+- Test all CRUD operations
+- Test authentication flow
+- Test role-based access
+
+### **9.2 Test Data**
+- Create sample students and managers
+- Generate test attendance records
+- Test edge cases (same-day multiple check-ins, forgot check-out)
+
+---
+
+## 🚀 PHASE 10: DEVELOPMENT WORKFLOW
+
+### **10.1 Development Order**
+1. ✅ Setup project structure and dependencies
+2. ✅ Initialize SQLite database with tables
+3. ✅ Create Express server with middleware
+4. ✅ Implement authentication system (in progress)
+5. Implement student portal features
+6. Implement manager portal features
+7. Add business logic (auto-checkout, calculations)
+8. Implement reporting system
+9. Add audit logging everywhere
+10. Testing and bug fixes
+11. Documentation
+
+### **10.2 Git Workflow**
+- Initial commit with project structure
+- Feature branches for each major component
+- Commit frequently with clear messages
+- Keep .env out of version control
+
+---
+
+## 📦 PHASE 11: DEPLOYMENT CONSIDERATIONS (Future)
+
+### **11.1 Environment Setup**
+- Development (.env.development)
+- Production (.env.production)
+- Environment-specific configurations
+
+### **11.2 Database Management**
+- Database backup strategy
+- Migration system for schema changes
+- Seed data for testing
+
+---
+
+## 🎯 CURRENT PROGRESS
+
+✅ **Completed:**
+1. Project initialized with dependencies
+2. Database schema designed and created
+3. Express server setup with middleware
+4. Authentication middleware created
+5. Auth controller with register/login logic
+6. Auth routes with validation
+
+📝 **Next Steps:**
+1. Integrate auth routes into server
+2. Test authentication endpoints
+3. Build student portal controllers
+4. Build manager portal controllers
+5. Implement attendance logic
+6. Add reporting system
+
+---
+
+This plan provides a complete roadmap for building the TimeTracker backend system. Each phase builds on the previous one, and the detailed breakdown ensures we don't miss any features visible in the UI screenshots. 
+
+Would you like me to continue implementing the remaining components, or would you like to review and modify this plan first?

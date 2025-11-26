@@ -1,2 +1,6 @@
 # Environment variables file (CRITICAL for security)
 .env
+
+#notes
+notes.txt
+notes_routes.txt
